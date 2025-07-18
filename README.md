@@ -616,6 +616,32 @@ const response = await openai.chat.completions.create({
 
 ---
 
+## 🚀 Use Cases
+
+Discover some real-world examples of Handit.ai:
+
+### Customer Service Assistant
+**Repository:** [Customer Service Asssitant](https://github.com/Handit-AI/handit-demo-customer-service-asssitant)
+
+A comprehensive customer service AI agent that demonstrates the power of Handit.ai's monitoring and evaluation features. This demo showcases:
+- Real-time conversation monitoring and quality assessment
+- Automated performance evaluation and feedback loops
+- Comparison between standard chatbots and Handit-enhanced agents
+- Self-improvement capabilities through continuous learning
+
+### Document Classification
+**Repository:** [Document Classification](https://github.com/Handit-AI/handit-demo-docs-classification)
+
+An intelligent document classification system built with React, Node.js, and OpenAI GPT-4. This demo illustrates:
+- Automated document categorization and processing
+- Integration with modern web frameworks
+- AI-powered content analysis and classification
+- Handit.ai's evaluation framework for document processing accuracy
+
+While there are plenty of tools to extract information from your documents, PDFs, Excel files, images, etc., with good accuracy, what happens when your LLM gets wrong on manipulating important data like prices, contract terms, financial figures, customer details, or compliance information? Then all your workflow breaks down, producing bad outputs and potentially costly errors. Handit.ai gives you a super boost to accuracy by continuously monitoring and improving your AI's performance on critical document processing tasks.
+
+---
+
 ## 🌐 Language Support
 
 Write your AI agents in your preferred language:
