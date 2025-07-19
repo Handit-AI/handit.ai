@@ -1,48 +1,131 @@
 # 🎯 JSON-Driven Onboarding System
 
-A comprehensive onboarding system that reads from `config.json` and orchestrates the entire user onboarding experience using multiple specialized components.
+<div align="center">
 
-## 🏗️ Architecture
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Version](https://img.shields.io/badge/version-2.0.0-green.svg)
+![React](https://img.shields.io/badge/React-18+-61DAFB?logo=react)
+![Status](https://img.shields.io/badge/status-production--ready-success.svg)
 
-The system consists of:
+*A comprehensive, JSON-configurable onboarding system that orchestrates seamless user experiences*
 
-1. **OnboardingService** - Manages JSON configuration and state
-2. **OnboardingOrchestrator** - Main component that coordinates everything
-3. **Individual Components** - Menu, Assistant, Banners, Mouse guidance
-4. **JSON Configuration** - Defines tours, steps, and behaviors
+[🚀 Quick Start](#-quick-start) • [🎮 Demo](https://www.linkedin.com/posts/joseramirezr17_i-honestly-have-never-seen-an-onboarding-activity-7349466757700444161-EHhQ/?utm_source=share&utm_medium=member_desktop&rcm=ACoAACl5PnwBWEKArfkrAIxq34cty7pSyMFA0rc)
+
+</div>
+
+---
+
+## 📋 Table of Contents
+
+- [✨ Features](#-features)
+- [🚀 Quick Start](#-quick-start)
+- [📖 API Reference](#-api-reference)
+- [🎨 Configuration](#-configuration)
+- [🎮 Components](#-components)
+- [💡 Examples](#-examples)
+- [📁 Project Structure](#-project-structure)
+- [🔧 Advanced Usage](#-advanced-usage)
+- [📊 Analytics & Events](#-analytics--events)
+- [🎯 Best Practices](#-best-practices)
+- [🤝 Contributing](#-contributing)
+- [📄 License](#-license)
+
+---
+
+## ✨ Features
+
+<table>
+<tr>
+<td>
+
+🎯 **JSON-Driven Configuration**  
+Define entire user journeys in declarative JSON
+
+⚡ **Zero-Config Setup**  
+Works out of the box with sensible defaults
+
+🎨 **Fully Customizable**  
+Theme, content, and behavior adaptation
+
+</td>
+<td>
+
+🧠 **Smart Triggers**  
+Conditional logic based on user state
+
+📱 **Multi-Modal Experience**  
+Tooltips, modals, cursor guidance, banners
+
+📊 **Built-in Analytics**  
+Track completion rates and user behavior
+
+</td>
+</tr>
+</table>
+
+---
+
+
+<details>
+<summary><strong>🔧 Core Components</strong></summary>
+
+| Component | Purpose | Usage |
+|-----------|---------|-------|
+| `OnboardingOrchestrator` | Main coordinator | Manages entire flow |
+| `OnboardingService` | State management | Singleton service |
+| `OnboardingMenu` | Navigation popup | Tour selection |
+| `OnboardingAssistant` | Floating guide | Step-by-step help |
+| `OnboardingBanner` | Contextual tooltips | Positioned hints |
+| `OnboardingChat` | Interactive chat interface | Assistant & agent setup |
+| `ConnectAgentBanner` | Agent connection guide | Connection workflow |
+| `OnboardingChatContainer` | Chat wrapper | Event management |
+| `InvisibleMouse` | Cursor guidance | Interactive tutorials |
+
+</details>
+
+---
 
 ## 🚀 Quick Start
 
-### Basic Usage
+### Installation
+
+```bash
+# The system is already integrated in the dashboard
+# No additional installation required
+```
+
+### Basic Implementation
 
 ```jsx
 import { OnboardingOrchestrator } from '@/components/onboarding';
 
-function MyPage() {
-  const [onboardingActive, setOnboardingActive] = useState(false);
+export default function MyPage() {
+  const [active, setActive] = useState(false);
 
   return (
     <>
-      <button onClick={() => setOnboardingActive(true)}>
-        Start Onboarding
+      <button 
+        onClick={() => setActive(true)}
+        className="btn-primary"
+      >
+        🎯 Start Onboarding
       </button>
 
-      {onboardingActive && (
+      {active && (
         <OnboardingOrchestrator
           autoStart={false}
-          triggerOnMount={false}
           userState={{
             userId: 'user-123',
             agentType: 'document-ai',
             agentName: 'My Agent'
           }}
           onComplete={(tour) => {
-            setOnboardingActive(false);
-            console.log('Completed:', tour);
+            setActive(false);
+            console.log('✅ Completed:', tour);
           }}
           onSkip={(data) => {
-            setOnboardingActive(false);
-            console.log('Skipped:', data.reason);
+            setActive(false);
+            console.log('⏭️ Skipped:', data.reason);
           }}
         />
       )}
@@ -51,7 +134,7 @@ function MyPage() {
 }
 ```
 
-### Auto-triggered Onboarding
+### Auto-Triggered Experience
 
 ```jsx
 <OnboardingOrchestrator
@@ -67,11 +150,86 @@ function MyPage() {
 />
 ```
 
-## 📝 JSON Configuration
+---
 
-The system reads from `apps/dashboard/src/services/onboarding/config.json`:
+## 📖 API Reference
 
-### Tour Structure
+<details>
+<summary><strong>OnboardingOrchestrator Props</strong></summary>
+
+```typescript
+interface OnboardingOrchestratorProps {
+  autoStart?: boolean;           // Auto-start when conditions met
+  triggerOnMount?: boolean;      // Check triggers on mount
+  userState?: UserState;         // User context for personalization
+  onComplete?: (tour: Tour) => void;  // Completion callback
+  onSkip?: (data: SkipData) => void;  // Skip callback
+}
+```
+
+</details>
+
+<details>
+<summary><strong>OnboardingChat Props</strong></summary>
+
+```typescript
+interface OnboardingChatProps {
+  mode?: 'assistant' | 'agent-setup';  // Chat mode
+  visible?: boolean;                   // Visibility state
+  position?: string;                   // Position on screen
+  onComplete?: () => void;             // Completion callback
+  onClose?: () => void;                // Close callback
+  questions?: string[];                // Pre-loaded questions
+  isDarkMode?: boolean;                // Theme mode
+}
+```
+
+</details>
+
+<details>
+<summary><strong>ConnectAgentBanner Props</strong></summary>
+
+```typescript
+interface ConnectAgentBannerProps {
+  visible?: boolean;                      // Show/hide banner
+  onClose?: () => void;                   // Close callback
+  onConnectionSuccess?: () => void;       // Success callback
+  onSkip?: () => void;                    // Skip callback
+  chatPosition?: string;                  // Chat position when opened
+}
+```
+
+</details>
+
+<details>
+<summary><strong>OnboardingService Methods</strong></summary>
+
+```javascript
+import onboardingService from '@/services/onboarding/onboardingService';
+
+// 🚀 Initialize with user data
+onboardingService.init({ 
+  userId: '123', 
+  agentType: 'document-ai' 
+});
+
+// 🎯 Start specific tour
+onboardingService.startTour('welcome-concept-walkthrough');
+
+// 📝 Handle form submissions
+onboardingService.submitForm('agent-type-selection', formData);
+
+// 📊 Track custom events
+onboardingService.trackEvent('custom_event', { data: 'value' });
+```
+
+</details>
+
+---
+
+## 🎨 Configuration
+
+### JSON Structure Overview
 
 ```json
 {
@@ -85,7 +243,7 @@ The system reads from `apps/dashboard/src/services/onboarding/config.json`:
     "tours": [
       {
         "id": "welcome-concept-walkthrough",
-        "name": "Welcome Tour",
+        "name": "🎉 Welcome Tour",
         "type": "modal",
         "steps": [...]
       }
@@ -94,14 +252,20 @@ The system reads from `apps/dashboard/src/services/onboarding/config.json`:
 }
 ```
 
-### Step Types
+<details>
+<summary><strong>📝 Step Types</strong></summary>
 
-1. **fullscreen-modal** - Full-screen welcome screens
-2. **modal** - Form dialogs and information modals
-3. **cursor-only** - Invisible cursor guidance
-4. **tooltip** - Positioned help tooltips
+| Type | Description | Use Case |
+|------|-------------|----------|
+| `fullscreen-modal` | Full-screen welcome | Onboarding intro |
+| `modal` | Dialog forms | Data collection |
+| `cursor-only` | Invisible guidance | Interactive tutorials |
+| `tooltip` | Positioned help | Feature highlights |
 
-### Cursor Guidance
+</details>
+
+<details>
+<summary><strong>🖱️ Cursor Guidance Example</strong></summary>
 
 ```json
 {
@@ -114,8 +278,8 @@ The system reads from `apps/dashboard/src/services/onboarding/config.json`:
         "targetText": "Tracing",
         "action": { "type": "click" },
         "instruction": {
-          "title": "Click on Tracing",
-          "description": "This shows all your agent executions",
+          "title": "📊 Click on Tracing",
+          "description": "View all your agent executions here",
           "position": "right"
         }
       }
@@ -124,59 +288,33 @@ The system reads from `apps/dashboard/src/services/onboarding/config.json`:
 }
 ```
 
+</details>
+
+---
+
 ## 🎮 Components
 
-### OnboardingOrchestrator
-
-Main component that manages the entire flow:
-
-**Props:**
-- `autoStart`: Start automatically when conditions are met
-- `triggerOnMount`: Check triggers on component mount
-- `userState`: User information for personalization
-- `onComplete`: Callback when tour completes
-- `onSkip`: Callback when tour is skipped
-
-### OnboardingService
-
-Singleton service that manages configuration and state:
-
-```js
-import onboardingService from '@/services/onboarding/onboardingService';
-
-// Initialize with user data
-onboardingService.init({ userId: '123', agentType: 'document-ai' });
-
-// Start a specific tour
-onboardingService.startTour('welcome-concept-walkthrough');
-
-// Handle form submissions
-onboardingService.submitForm('agent-type-selection', formData);
-
-// Track events
-onboardingService.trackEvent('custom_event', { data: 'value' });
-```
-
-### Individual Components
-
-Each component can be used standalone:
+### Standalone Usage
 
 ```jsx
 import { 
   OnboardingMenu,
-  OnboardingAssistant, 
+  OnboardingAssistant,
+  OnboardingChat,
+  ConnectAgentBanner,
+  OnboardingChatContainer,
   useOnboardingBanners,
   useInvisibleMouse 
 } from '@/components/onboarding';
 
-// Menu popup
+// 🎯 Menu popup
 <OnboardingMenu 
   open={true} 
   onClose={handleClose}
   onOnboardingClick={startTour} 
 />
 
-// Floating assistant
+// 🤖 Floating assistant
 <OnboardingAssistant
   visible={true}
   currentStep={2}
@@ -185,88 +323,66 @@ import {
   onPrevious={handlePrev}
 />
 
-// Banners
+// 💬 Interactive chat interface
+<OnboardingChat
+  mode="assistant" // or "agent-setup"
+  visible={true}
+  position="center"
+  onComplete={handleChatComplete}
+  onClose={handleChatClose}
+  questions={['How do I set up my agent?']}
+/>
+
+// 🔗 Agent connection banner
+<ConnectAgentBanner
+  visible={true}
+  onConnectionSuccess={handleSuccess}
+  onSkip={handleSkip}
+  chatPosition="center"
+/>
+
+// 📦 Chat container wrapper
+<OnboardingChatContainer
+  connectionStatus="disconnected"
+  onComplete={handleComplete}
+  questions={customQuestions}
+/>
+
+// 💡 Banner system
 const banners = useOnboardingBanners();
 banners.showBanner({
-  title: 'Info',
-  message: 'Help text here',
+  title: '💡 Pro Tip',
+  message: 'Use keyboard shortcuts for faster navigation',
   position: { top: 100, left: 200 }
 });
 
-// Mouse guidance
+// 🖱️ Mouse guidance
 const mouse = useInvisibleMouse();
 mouse.moveToElement('.my-button');
 mouse.clickElement('.my-button');
 ```
 
-## 🎨 Customization
+---
 
-### Agent Types
+## 💡 Examples
 
-The system supports different agent types with personalized content:
-
-- `document-ai` - Document processing agents
-- `custom-agent` - General AI assistants  
-- `langchain-rag` - Knowledge base agents
-
-### Dynamic Content
-
-Content is personalized based on user state:
-
-```json
-{
-  "dynamicContent": {
-    "recommendedEvaluators": {
-      "document-ai": {
-        "name": "Completeness Evaluator",
-        "description": "Ensures all required fields are extracted"
-      }
-    }
-  }
-}
-```
-
-### Placeholders
-
-Use placeholders in content that get replaced automatically:
-
-- `{{user.agentName}}` - User's agent name
-- `{{user.agentType}}` - Selected agent type
-- `{{user.integrationToken}}` - Generated integration token
-- `{{recommendedEvaluator.name}}` - Recommended evaluator name
-
-## 📊 Analytics
-
-Events are automatically tracked:
-
-```js
-// Built-in events
-tour_started
-step_completed  
-tour_completed
-tour_skipped
-action_clicked
-integration_completed
-first_trace_received
-evaluator_created
-
-// Access analytics
-onboardingService.analytics // Array of events
-```
-
-## 🔗 Integration Examples
-
-### Dashboard Page
+<details>
+<summary><strong>🏠 Dashboard Integration</strong></summary>
 
 ```jsx
 export default function DashboardPage() {
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   return (
-    <>
-      <button onClick={() => setShowOnboarding(true)}>
-        Get Started
-      </button>
+    <div className="dashboard">
+      <header>
+        <button 
+          onClick={() => setShowOnboarding(true)}
+          className="btn-outline"
+        >
+          🎯 Get Started
+        </button>
+      </header>
 
       {showOnboarding && (
         <OnboardingOrchestrator
@@ -274,12 +390,15 @@ export default function DashboardPage() {
           onComplete={() => setShowOnboarding(false)}
         />
       )}
-    </>
+    </div>
   );
 }
 ```
 
-### Auto-trigger on First Login
+</details>
+
+<details>
+<summary><strong>🔐 Auto-trigger on First Login</strong></summary>
 
 ```jsx
 export default function AppLayout({ user }) {
@@ -302,53 +421,152 @@ export default function AppLayout({ user }) {
 }
 ```
 
-## 🧪 Testing
+</details>
 
-Visit `/onboarding-demo` to test all components:
+---
 
-1. **JSON-Driven Orchestrator** - Full experience following config.json
-2. **Individual Components** - Test each component separately
-3. **Interactive Controls** - Customize and test different scenarios
-
-## 📁 File Structure
+## 📁 Project Structure
 
 ```
 apps/dashboard/src/
-├── components/onboarding/
-│   ├── OnboardingOrchestrator.js    # Main orchestrator
-│   ├── OnboardingMenu.js           # Menu popup
-│   ├── OnboardingAssistant.js      # Floating assistant
-│   ├── OnboardingBanner.js         # Tooltip banners
-│   ├── InvisibleMouse.js           # Mouse guidance
-│   └── index.js                    # Exports
-├── services/onboarding/
-│   ├── config.json                 # Tour configuration
-│   └── onboardingService.js        # Service manager
-└── app/(dashboard)/
-    ├── onboarding-demo/page.js     # Demo page
-    └── ag-monitoring/page.js       # Production example
+├── 📁 components/onboarding/
+│   ├── 🎯 OnboardingOrchestrator.js    # Main orchestrator (56KB)
+│   ├── 📋 OnboardingMenu.js           # Menu popup (17KB)
+│   ├── 🤖 OnboardingAssistant.js      # Floating assistant (8.5KB)
+│   ├── 💡 OnboardingBanner.js         # Tooltip banners (12KB)
+│   ├── 💬 OnboardingChat.js           # Interactive chat interface (29KB)
+│   ├── 🔗 ConnectAgentBanner.js       # Agent connection guide (5.8KB)
+│   ├── 📦 OnboardingChatContainer.js  # Chat wrapper (2.9KB)
+│   ├── 🖱️ InvisibleMouse.js           # Mouse guidance (9.7KB)
+│   ├── 📚 OnboardingFullGuide.js      # Full guide dialogs (24KB)
+│   ├── 🏗️ StableBannerContainer.js    # Banner container (1.8KB)
+│   ├── 💻 CodeRenderer.js             # Code display utility (643B)
+│   ├── 🔌 ConnectionStatusManager.js  # Connection status (908B)
+│   └── 📤 index.js                    # Public exports (593B)
+├── 📁 services/onboarding/
+│   ├── ⚙️ config.json                 # Tour configuration
+│   └── 🔧 onboardingService.js        # Service manager
+└── 📁 app/(dashboard)/
+    ├── 🎮 onboarding-demo/page.js     # Demo page
+    └── 📊 ag-monitoring/page.js       # Production example
 ```
+
+---
+
+## 🔧 Advanced Usage
+
+### 🎨 Agent Type Customization
+
+<details>
+<summary><strong>Supported Agent Types</strong></summary>
+
+| Agent Type | Description | Recommended Evaluators |
+|------------|-------------|----------------------|
+| `document-ai` | Document processing | Completeness, Accuracy |
+| `custom-agent` | General assistants | Response Quality, Helpfulness |
+| `langchain-rag` | Knowledge base | Relevance, Factuality |
+
+</details>
+
+### 🔄 Dynamic Content System
+
+```json
+{
+  "dynamicContent": {
+    "recommendedEvaluators": {
+      "document-ai": {
+        "name": "📋 Completeness Evaluator",
+        "description": "Ensures all required fields are extracted",
+        "icon": "✅"
+      }
+    }
+  }
+}
+```
+
+### 🏷️ Content Placeholders
+
+| Placeholder | Description | Example |
+|-------------|-------------|---------|
+| `{{user.agentName}}` | User's agent name | "My Document AI" |
+| `{{user.agentType}}` | Selected agent type | "document-ai" |
+| `{{user.integrationToken}}` | Generated token | "hdt_abc123..." |
+| `{{recommendedEvaluator.name}}` | Evaluator name | "Completeness Evaluator" |
+
+---
+
+## 📊 Analytics & Events
+
+### Built-in Event Tracking
+
+```javascript
+// 📈 Automatically tracked events
+const events = [
+  'tour_started',
+  'step_completed',
+  'tour_completed', 
+  'tour_skipped',
+  'action_clicked',
+  'integration_completed',
+  'first_trace_received',
+  'evaluator_created'
+];
+
+// 📊 Access analytics
+console.log(onboardingService.analytics);
+```
+
+---
 
 ## 🎯 Best Practices
 
-1. **Start Simple** - Begin with the orchestrator for full experience
-2. **Personalize** - Use agent types and user state for relevant content
-3. **Test Thoroughly** - Use the demo page to validate all flows
-4. **Analytics** - Monitor completion rates and drop-off points
-5. **Incremental** - Add tours gradually as features are built
+<table>
+<tr>
+<td>
 
-## 🔧 Configuration
+### ✅ Do's
 
-Edit `config.json` to:
-- Add new tours and steps
-- Modify trigger conditions  
-- Customize content for different user types
-- Add cursor guidance sequences
-- Configure analytics events
+- 🎯 Start with the orchestrator
+- 🎨 Personalize with user state  
+- 🧪 Test all flows thoroughly
+- 📊 Monitor analytics regularly
+- 🔄 Iterate based on data
 
-The system automatically handles:
-- State management
-- Component coordination  
-- Event tracking
-- Dynamic content replacement
-- Navigation between steps 
+</td>
+<td>
+
+### ❌ Don'ts
+
+- 🚫 Skip user state setup
+- 🚫 Overload with too many steps
+- 🚫 Ignore completion rates
+- 🚫 Hardcode content
+- 🚫 Skip mobile testing
+
+</td>
+</tr>
+</table>
+
+---
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Implement your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+---
+
+<div align="center">
+
+### 🚀 Ready to get started?
+
+**Made with ❤️ for better user experiences**
+
+</div> 
