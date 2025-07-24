@@ -4,7 +4,8 @@ import {
   getInactiveUsersRange,
   debugUsers,
   getInactiveUsersTest,
-  getUsersWithoutEvaluations
+  getUsersWithoutEvaluations,
+  getUsersWithOptimizedPrompts
 } from '../controllers/notificationSystemController.js';
 
 const router = express.Router();
@@ -23,5 +24,8 @@ router.get('/inactive-users', getInactiveUsersRange);
 
 // Get users who don't have any evaluations configured
 router.get('/users-without-evaluations/:nDays?', getUsersWithoutEvaluations);
+
+// Get users who have optimized prompts with full details
+router.get('/users-with-optimized-prompts', getUsersWithOptimizedPrompts);
 
 export default router; 

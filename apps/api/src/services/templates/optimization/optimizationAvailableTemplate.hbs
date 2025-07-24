@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>New AI Prompt Optimization Available - Handit.AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Poppins', sans-serif;
+        background-color: #f8fafb;
+      }
+
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 40px 30px;
+        background: #ffffff url('cid:bg-image') no-repeat top center;
+        background-size: cover;
+        border-radius: 16px;
+        box-sizing: border-box;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+      }
+
+      .logo {
+        display: block;
+        margin: 0 auto 30px;
+        width: 160px;
+        height: auto;
+      }
+
+      .hero {
+        text-align: center;
+        margin-bottom: 40px;
+      }
+
+      h1 {
+        font-size: 24px;
+        font-weight: 600;
+        color: #00272f;
+        margin-bottom: 16px;
+        line-height: 1.3;
+      }
+
+      .subtitle {
+        font-size: 16px;
+        color: #666;
+        margin-bottom: 30px;
+        line-height: 1.5;
+      }
+
+      p {
+        font-size: 15px;
+        color: #00272f;
+        margin: 16px 0;
+        line-height: 1.6;
+      }
+
+      .optimization-highlight {
+        background: linear-gradient(135deg, #02f7aa 0%, #00e691 100%);
+        color: #00272f;
+        padding: 20px;
+        border-radius: 12px;
+        margin: 25px 0;
+        text-align: center;
+      }
+
+      .optimization-highlight h2 {
+        font-size: 18px;
+        font-weight: 600;
+        margin: 0 0 10px 0;
+      }
+
+      .optimization-highlight p {
+        margin: 0;
+        font-size: 14px;
+        opacity: 0.8;
+      }
+
+      .cta-primary {
+        display: inline-block;
+        margin: 30px auto;
+        padding: 16px 32px;
+        background-color: #02f7aa;
+        color: #00272f !important;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 16px;
+        border-radius: 8px;
+        text-align: center;
+      }
+
+      .cta-secondary {
+        display: inline-block;
+        margin: 15px auto;
+        padding: 12px 24px;
+        background-color: transparent;
+        color: #02f7aa !important;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 14px;
+        border: 2px solid #02f7aa;
+        border-radius: 8px;
+        text-align: center;
+      }
+
+      .stats {
+        background-color: #f8fafb;
+        padding: 20px;
+        border-radius: 8px;
+        margin: 30px 0;
+        text-align: center;
+      }
+
+      .stat-item {
+        display: inline-block;
+        margin: 0 20px;
+        text-align: center;
+      }
+
+      .stat-number {
+        font-size: 24px;
+        font-weight: 600;
+        color: #02f7aa;
+        display: block;
+      }
+
+      .stat-label {
+        font-size: 12px;
+        color: #666;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .model-info {
+        background-color: #f8fafb;
+        border-left: 4px solid #02f7aa;
+        padding: 15px 20px;
+        margin: 20px 0;
+        border-radius: 0 8px 8px 0;
+      }
+
+      .model-name {
+        font-weight: 600;
+        color: #00272f;
+        margin-bottom: 5px;
+      }
+
+      .model-details {
+        font-size: 14px;
+        color: #666;
+      }
+
+      .footer {
+        text-align: center;
+        font-size: 13px;
+        color: #666;
+        margin-top: 40px;
+        padding-top: 20px;
+        border-top: 1px solid #eee;
+      }
+
+      .footer a {
+        color: #02f7aa;
+        text-decoration: none;
+      }
+
+      @media screen and (max-width: 600px) {
+        .container {
+          padding: 30px 20px;
+        }
+        .logo {
+          width: 120px;
+        }
+        h1 {
+          font-size: 20px;
+        }
+        .stat-item {
+          display: block;
+          margin: 10px 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <img class="logo" src="cid:logo-image" alt="Handit.ai Logo" />
+      
+      <div class="hero">
+        <h1>🚀 Your AI Just Got Smarter</h1>
+        <p class="subtitle">Hi {{firstName}}, we've optimized your AI model and it's ready to deploy</p>
+      </div>
+
+      <div class="optimization-highlight">
+        <h2>New Optimization Ready</h2>
+        <p>{{totalOptimizedPrompts}} optimized prompt{{#if (gt totalOptimizedPrompts 1)}}s{{/if}} available</p>
+      </div>
+
+      <p>
+        Great news! Our AI optimization engine has analyzed your model's performance and created 
+        <strong>improved prompts that perform better</strong> than your current version.
+      </p>
+
+      {{#if modelName}}
+      <div class="model-info">
+        <div class="model-name">📋 {{modelName}}</div>
+        <div class="model-details">{{modelType}} • Version {{optimizedVersion}} • Ready for deployment</div>
+      </div>
+      {{/if}}
+
+      <div class="stats">
+        <div class="stat-item">
+          <span class="stat-number">{{totalOptimizedPrompts}}</span>
+          <span class="stat-label">Optimized Prompts</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number">{{activeOptimizedPrompts}}</span>
+          <span class="stat-label">Ready to Deploy</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-number">1-Click</span>
+          <span class="stat-label">Deployment</span>
+        </div>
+      </div>
+
+      <p>
+        <strong>What's been optimized:</strong> The AI has refined your prompts based on real performance data, 
+        conversation patterns, and success metrics to deliver better results.
+      </p>
+
+      <div style="text-align: center;">
+        <a href="{{reviewOptimizationUrl}}" class="cta-primary">
+          Review & Deploy Optimization ⚡
+        </a>
+        <br>
+        <a href="{{dashboardUrl}}" class="cta-secondary">
+          View Performance Details
+        </a>
+      </div>
+
+      <p style="font-size: 14px; color: #666; margin-top: 30px;">
+        <strong>Deploy with confidence:</strong> All optimizations are tested and validated. 
+        You can always rollback to previous versions if needed.
+      </p>
+
+      <div class="footer">
+        Questions about your optimization? Reply to this email or check our <a href="https://docs.handit.ai/optimization">optimization guide</a><br>
+        &copy; {{year}} Handit.ai — Making AI systems transparent and self-improving
+      </div>
+    </div>
+  </body>
+</html> 

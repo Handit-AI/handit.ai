@@ -8,6 +8,7 @@
  * - GET /api/notification-system/inactive-users/:nDays - Get users registered exactly N days ago who are inactive
  * - GET /api/notification-system/inactive-users?startDays=X&endDays=Y - Get users registered between X and Y days ago who are inactive
  * - GET /api/notification-system/users-without-evaluations/:nDays? - Get users who don't have any evaluations configured
+ * - GET /api/notification-system/users-with-optimized-prompts - Get users who have optimized prompts and send notification emails
  * 
  * Inactive users are defined as users whose companies have no agents created.
  * Users without evaluations are users whose models don't have any entries in ModelEvaluationPrompts table.
@@ -17,6 +18,7 @@
  * - GET /api/notification-system/inactive-users?startDays=3&endDays=7 - Get users registered between 3-7 days ago with no agents
  * - GET /api/notification-system/users-without-evaluations - Get all users without evaluations
  * - GET /api/notification-system/users-without-evaluations/7 - Get users without evaluations registered in the last 7 days
+ * - GET /api/notification-system/users-with-optimized-prompts - Get all users with optimized prompts and send notification emails
  * 
  * Response format includes:
  * - List of users with company information
@@ -33,7 +35,7 @@
 
 import db from '../../models/index.js';
 import { Op } from 'sequelize';
-import { sendBulkReEngagementEmails, sendBulkEvaluationStepEmails } from '../services/emailService.js';
+import { sendBulkReEngagementEmails, sendBulkEvaluationStepEmails, sendBulkOptimizationAvailableEmails } from '../services/emailService.js';
 
 const { User, Company, Agent, sequelize, Email } = db;
 
@@ -899,6 +901,208 @@ export const getUsersWithoutEvaluations = async (req, res) => {
 
   } catch (error) {
     console.error('❌ Error in getUsersWithoutEvaluations:', error);
+    return res.status(500).json({ 
+      error: 'Internal server error',
+      message: error.message 
+    });
+  }
+}; 
+
+/**
+ * Get users who have optimized prompts with full details and send notification emails
+ * Returns details of optimized prompts including all parameters from ModelVersions
+ * Also sends optimization available emails to all users with optimized prompts
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
+export const getUsersWithOptimizedPrompts = async (req, res) => {
+  try {
+    console.log('🔍 Getting users with optimized prompts...');
+
+    // Get all ABTestModels that have optimized_model_version_id
+    const usersWithOptimizedPrompts = await sequelize.query(`
+      SELECT DISTINCT
+        u.id as user_id,
+        CONCAT(u.first_name, ' ', u.last_name) as user_name,
+        u.first_name as user_first_name,
+        u.last_name as user_last_name,
+        u.email as user_email,
+        u.created_at as user_registered_at,
+        u.last_login_at as user_last_login_at,
+        c.id as company_id,
+        c.name as company_name,
+        c.test_mode as company_test_mode,
+        m.id as model_id,
+        m.name as model_name,
+        m.type as model_type,
+        om.id as optimized_model_id,
+        om.name as optimized_model_name,
+        mv.id as optimized_version_id,
+        mv.version as optimized_version_number,
+        mv.parameters::text as optimized_parameters,
+        mv.active_version as is_active_optimized_version,
+        mv.created_at as optimized_version_created_at,
+        ab.id as ab_test_id,
+        ab.principal as is_principal_test,
+        ab.percentage as test_percentage,
+        ab.created_at as ab_test_created_at
+      FROM "ABTestModels" ab
+      INNER JOIN "Models" m ON ab.model_id = m.id
+      INNER JOIN "Models" om ON ab.optimized_model_id = om.id
+      INNER JOIN "ModelVersions" mv ON ab.optimized_model_version_id = mv.id
+      INNER JOIN "ModelGroups" mg ON m.model_group_id = mg.id
+      INNER JOIN "Companies" c ON mg.company_id = c.id
+      INNER JOIN "Users" u ON c.id = u.company_id
+      WHERE ab.optimized_model_version_id IS NOT NULL
+        AND ab.deleted_at IS NULL
+        AND m.deleted_at IS NULL
+        AND om.deleted_at IS NULL
+        AND mv.deleted_at IS NULL
+        AND mg.deleted_at IS NULL
+        AND c.deleted_at IS NULL
+        AND u.deleted_at IS NULL
+      ORDER BY ab.created_at DESC
+    `, {
+      type: sequelize.QueryTypes.SELECT
+    });
+
+    console.log(`✅ Found ${usersWithOptimizedPrompts.length} records with optimized prompts`);
+
+    // Group by user to avoid duplicates and structure the response
+    const userMap = new Map();
+    
+    usersWithOptimizedPrompts.forEach(record => {
+      const userId = record.user_id;
+      
+      if (!userMap.has(userId)) {
+        userMap.set(userId, {
+          user: {
+            id: record.user_id,
+            name: record.user_name,
+            firstName: record.user_first_name,
+            lastName: record.user_last_name,
+            email: record.user_email,
+            registeredAt: record.user_registered_at,
+            lastLoginAt: record.user_last_login_at
+          },
+          company: {
+            id: record.company_id,
+            name: record.company_name,
+            testMode: record.company_test_mode
+          },
+          optimizedPrompts: []
+        });
+      }
+      
+      const userData = userMap.get(userId);
+      
+      // Parse the parameters JSON if it exists
+      let parsedParameters = null;
+      try {
+        parsedParameters = record.optimized_parameters ? JSON.parse(record.optimized_parameters) : null;
+      } catch (e) {
+        console.warn(`⚠️ Failed to parse parameters for version ${record.optimized_version_id}:`, e);
+        parsedParameters = record.optimized_parameters;
+      }
+      
+      userData.optimizedPrompts.push({
+        abTest: {
+          id: record.ab_test_id,
+          isPrincipal: record.is_principal_test,
+          percentage: record.test_percentage,
+          createdAt: record.ab_test_created_at
+        },
+        originalModel: {
+          id: record.model_id,
+          name: record.model_name,
+          type: record.model_type
+        },
+        optimizedModel: {
+          id: record.optimized_model_id,
+          name: record.optimized_model_name
+        },
+        optimizedVersion: {
+          id: record.optimized_version_id,
+          versionNumber: record.optimized_version_number,
+          isActive: record.is_active_optimized_version,
+          createdAt: record.optimized_version_created_at,
+          parameters: parsedParameters,
+          // Extract specific fields from parameters for easy access
+          optimizedPrompt: parsedParameters?.prompt || null,
+          allParameters: parsedParameters
+        }
+      });
+    });
+
+    const result = Array.from(userMap.values());
+
+    // Create a simplified users list similar to usersWithoutEvaluations format
+    const usersWithOptimizedPromptsList = result.map(userData => {
+      const registrationDate = userData.user.registeredAt ? new Date(userData.user.registeredAt) : null;
+      const daysSinceRegistration = registrationDate ? 
+        Math.floor((new Date() - registrationDate) / (1000 * 60 * 60 * 24)) : 0;
+
+      return {
+        id: userData.user.id,
+        firstName: userData.user.firstName || '',
+        lastName: userData.user.lastName || '',
+        email: userData.user.email,
+        registeredAt: userData.user.registeredAt,
+        lastLoginAt: userData.user.lastLoginAt,
+        company: {
+          id: userData.company.id,
+          name: userData.company.name,
+          testMode: userData.company.testMode || false
+        },
+        daysSinceRegistration,
+        evaluationStatus: "has_optimized_prompts",
+        totalOptimizedPrompts: userData.optimizedPrompts.length,
+        activeOptimizedPrompts: userData.optimizedPrompts.filter(p => p.optimizedVersion.isActive).length
+      };
+    });
+
+    // Generate summary statistics
+    const summary = {
+      totalUsers: result.length,
+      totalOptimizedPrompts: usersWithOptimizedPrompts.length,
+      uniqueCompanies: new Set(result.map(r => r.company.id)).size,
+      activeOptimizedVersions: usersWithOptimizedPrompts.filter(r => r.is_active_optimized_version).length,
+      principalTests: usersWithOptimizedPrompts.filter(r => r.is_principal_test).length
+    };
+
+    console.log('📊 Summary:', summary);
+
+    // Send optimization available emails to all users
+    let emailResults = null;
+    try {
+      console.log('📧 Sending optimization available emails...');
+      emailResults = await sendBulkOptimizationAvailableEmails({
+        usersWithOptimizedPrompts: usersWithOptimizedPromptsList,
+        Email,
+        User,
+        notificationSource: 'optimization_available_bulk'
+      });
+      console.log(`✅ Email campaign completed: ${emailResults.sent} sent, ${emailResults.failed} failed`);
+    } catch (emailError) {
+      console.error('❌ Error sending optimization emails:', emailError);
+      emailResults = {
+        sent: 0,
+        failed: usersWithOptimizedPromptsList.length,
+        errors: [{ error: emailError.message }]
+      };
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Found ${result.length} users with optimized prompts`,
+      summary,
+      usersWithOptimizedPrompts: usersWithOptimizedPromptsList,
+      emailResults,
+      data: result
+    });
+
+  } catch (error) {
+    console.error('❌ Error in getUsersWithOptimizedPrompts:', error);
     return res.status(500).json({ 
       error: 'Internal server error',
       message: error.message 

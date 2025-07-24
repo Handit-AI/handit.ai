@@ -898,3 +898,149 @@ export const sendBulkEvaluationStepEmails = async ({
   console.log(`🎯 Bulk evaluation setup campaign completed: ${results.sent} sent, ${results.failed} failed`);
   return results;
 };
+
+/**
+ * Sends an optimization available email to a user who has optimized prompts ready.
+ * @param {Object} options - Email options.
+ * @param {string} options.recipientEmail - Email address of the recipient.
+ * @param {string} options.firstName - First name of the recipient.
+ * @param {string} options.modelName - Name of the optimized model.
+ * @param {string} options.modelType - Type of the model (chat, completion, etc.).
+ * @param {string} options.optimizedVersion - Version number of the optimization.
+ * @param {number} options.totalOptimizedPrompts - Total number of optimized prompts.
+ * @param {number} options.activeOptimizedPrompts - Number of active optimized prompts.
+ * @param {string} options.reviewOptimizationUrl - URL to review the optimization.
+ * @param {string} options.dashboardUrl - URL to the dashboard.
+ * @param {Object} options.Email - Email model for database operations.
+ * @param {Object} options.User - User model for database operations.
+ * @param {string} [options.notificationSource] - Source of the notification.
+ * @param {number} [options.sourceId] - ID of the source.
+ * @returns {Promise<void>}
+ */
+export const sendOptimizationAvailableEmail = async ({
+  recipientEmail,
+  firstName,
+  modelName,
+  modelType,
+  optimizedVersion,
+  totalOptimizedPrompts,
+  activeOptimizedPrompts,
+  reviewOptimizationUrl,
+  dashboardUrl,
+  Email,
+  User,
+  notificationSource = 'optimization_available',
+  sourceId = null
+}) => {
+  const subject = '🚀 Your AI Just Got Smarter - New Optimization Ready';
+  
+  const templateData = {
+    firstName,
+    modelName,
+    modelType,
+    optimizedVersion,
+    totalOptimizedPrompts,
+    activeOptimizedPrompts,
+    reviewOptimizationUrl,
+    dashboardUrl,
+    year: new Date().getFullYear()
+  };
+
+  await sendTemplatedEmail({
+    to: recipientEmail,
+    subject,
+    templateName: 'optimization/optimizationAvailableTemplate',
+    templateData,
+    attachments: [
+      {
+        content: fs.readFileSync(path.join(__dirname, 'src/services/templates/optimization/logo.png')).toString('base64'),
+        filename: 'logo.png',
+        type: 'image/png',
+        disposition: 'inline',
+        content_id: 'logo-image'
+      },
+      {
+        content: fs.readFileSync(path.join(__dirname, 'src/services/templates/optimization/bg-real.png')).toString('base64'),
+        filename: 'bg-handit.png',
+        type: 'image/png',
+        disposition: 'inline',
+        content_id: 'bg-image'
+      }
+    ],
+    Email,
+    User,
+    notificationSource,
+    sourceId
+  });
+};
+
+/**
+ * Sends bulk optimization available emails to multiple users with optimized prompts.
+ * @param {Object} options - Bulk email options.
+ * @param {Array} options.usersWithOptimizedPrompts - Array of user objects with optimized prompts.
+ * @param {Object} options.Email - Email model for database operations.
+ * @param {Object} options.User - User model for database operations.
+ * @param {string} [options.notificationSource] - Source of the notification.
+ * @returns {Promise<void>}
+ */
+export const sendBulkOptimizationAvailableEmails = async ({
+  usersWithOptimizedPrompts,
+  Email,
+  User,
+  notificationSource = 'optimization_available_bulk'
+}) => {
+  console.log(`📧 Starting bulk optimization available email campaign for ${usersWithOptimizedPrompts.length} users`);
+  
+  const results = {
+    sent: 0,
+    failed: 0,
+    errors: []
+  };
+
+  for (const user of usersWithOptimizedPrompts) {
+    try {
+      // Extract model information from the first optimized prompt
+      const firstOptimization = user.optimizedPrompts?.[0];
+      const modelName = firstOptimization?.originalModel?.name || 'AI Model';
+      const modelType = firstOptimization?.originalModel?.type || 'chat';
+      const optimizedVersion = firstOptimization?.optimizedVersion?.versionNumber || '1';
+      
+      // Generate URLs (you may want to customize these based on your routing)
+      const reviewOptimizationUrl = `${process.env.FRONTEND_URL}/dashboard/models/${firstOptimization?.originalModel?.id}/optimization`;
+      const dashboardUrl = `${process.env.FRONTEND_URL}/dashboard`;
+
+      await sendOptimizationAvailableEmail({
+        recipientEmail: user.email,
+        firstName: user.firstName,
+        modelName,
+        modelType,
+        optimizedVersion,
+        totalOptimizedPrompts: user.totalOptimizedPrompts || 1,
+        activeOptimizedPrompts: user.activeOptimizedPrompts || 0,
+        reviewOptimizationUrl,
+        dashboardUrl,
+        Email,
+        User,
+        notificationSource,
+        sourceId: user.id
+      });
+      
+      results.sent++;
+      console.log(`✅ Optimization available email sent to ${user.email}`);
+      
+      // Small delay between emails to avoid rate limiting
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+    } catch (error) {
+      results.failed++;
+      results.errors.push({
+        email: user.email,
+        error: error.message
+      });
+      console.error(`❌ Failed to send optimization available email to ${user.email}:`, error.message);
+    }
+  }
+
+  console.log(`🚀 Bulk optimization available campaign completed: ${results.sent} sent, ${results.failed} failed`);
+  return results;
+};
