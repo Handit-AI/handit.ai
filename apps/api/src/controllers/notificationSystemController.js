@@ -7,17 +7,21 @@
  * Current endpoints:
  * - GET /api/notification-system/inactive-users/:nDays - Get users registered exactly N days ago who are inactive
  * - GET /api/notification-system/inactive-users?startDays=X&endDays=Y - Get users registered between X and Y days ago who are inactive
+ * - GET /api/notification-system/users-without-evaluations/:nDays? - Get users who don't have any evaluations configured
  * 
  * Inactive users are defined as users whose companies have no agents created.
+ * Users without evaluations are users whose models don't have any entries in ModelEvaluationPrompts table.
  * 
  * Example usage:
  * - GET /api/notification-system/inactive-users/5 - Get users registered exactly 5 days ago with no agents
  * - GET /api/notification-system/inactive-users?startDays=3&endDays=7 - Get users registered between 3-7 days ago with no agents
+ * - GET /api/notification-system/users-without-evaluations - Get all users without evaluations
+ * - GET /api/notification-system/users-without-evaluations/7 - Get users without evaluations registered in the last 7 days
  * 
  * Response format includes:
- * - List of inactive users with company information
- * - Metrics about total registered users vs inactive users
- * - Inactivity rate percentage
+ * - List of users with company information
+ * - Metrics about total users vs target users
+ * - Adoption/inactivity rate percentages
  * 
  * Future endpoints can be added here for:
  * - Email notifications
@@ -29,7 +33,7 @@
 
 import db from '../../models/index.js';
 import { Op } from 'sequelize';
-import { sendBulkReEngagementEmails } from '../services/emailService.js';
+import { sendBulkReEngagementEmails, sendBulkEvaluationStepEmails } from '../services/emailService.js';
 
 const { User, Company, Agent, sequelize, Email } = db;
 
@@ -680,6 +684,221 @@ export const getInactiveUsersTest = async (req, res) => {
 
   } catch (error) {
     console.error('Error in getInactiveUsersTest:', error);
+    return res.status(500).json({ 
+      error: 'Internal server error',
+      message: error.message 
+    });
+  }
+};
+
+/**
+ * Get users who don't have any evaluations configured
+ * Returns users whose models don't have any entries in ModelEvaluationPrompts table
+ * Optionally filter by registration date range (N days ago until now)
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ */
+export const getUsersWithoutEvaluations = async (req, res) => {
+  try {
+    const { nDays } = req.params;
+    
+    // Build date filter if nDays is provided
+    let dateFilter = { deletedAt: null };
+    let dateRangeInfo = null;
+    
+    if (nDays) {
+      const days = parseInt(nDays);
+      if (isNaN(days) || days < 0) {
+        return res.status(400).json({ 
+          error: 'Invalid nDays parameter. Must be a positive number.' 
+        });
+      }
+      
+      // Calculate date range for users registered from N days ago until now
+      const endDate = new Date(); // Now
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - days);
+      startDate.setHours(0, 0, 0, 0); // Start of day N days ago
+      
+      dateFilter.createdAt = {
+        [Op.between]: [startDate, endDate]
+      };
+      
+      dateRangeInfo = {
+        start: startDate.toISOString().split('T')[0],
+        end: endDate.toISOString().split('T')[0],
+        days: days,
+        description: `From ${days} days ago until now`
+      };
+      
+      console.log(`🔍 Finding users without evaluations registered in the last ${days} days...`);
+    } else {
+      console.log('🔍 Finding all users without evaluations...');
+    }
+
+    // Get users with optional date filtering
+    const allUsers = await User.findAll({
+      where: dateFilter,
+      include: [
+        {
+          model: Company,
+          required: true,
+          where: {
+            deletedAt: null
+          },
+          attributes: ['id', 'name', 'testMode']
+        }
+      ],
+      attributes: [
+        'id', 
+        'firstName', 
+        'lastName', 
+        'email', 
+        'createdAt', 
+        'lastLoginAt',
+        'companyId'
+      ],
+      order: [['createdAt', 'DESC']]
+    });
+
+    if (allUsers.length === 0) {
+      const message = nDays 
+        ? `No users found registered in the last ${nDays} days`
+        : 'No users found in the database';
+      
+      return res.status(200).json({
+        message,
+        usersWithoutEvaluations: [],
+        totalCount: 0,
+        ...(dateRangeInfo && { dateRange: dateRangeInfo })
+      });
+    }
+
+    console.log(`📊 Found ${allUsers.length} total users`);
+
+    // Extract company IDs from all users
+    const companyIds = [...new Set(allUsers.map(user => user.companyId))];
+    console.log(`🏢 Found ${companyIds.length} unique companies`);
+
+    // Find companies that have models with evaluations using raw SQL for better performance
+    const companiesWithEvaluations = await sequelize.query(`
+      SELECT DISTINCT mg.company_id as companyId
+      FROM "ModelGroups" mg
+      INNER JOIN "Models" m ON mg.id = m.model_group_id
+      INNER JOIN "ModelEvaluationPrompts" mep ON m.id = mep.model_id
+      WHERE mg.company_id IN (:companyIds)
+        AND mg.deleted_at IS NULL
+        AND m.deleted_at IS NULL
+    `, {
+      replacements: { companyIds: companyIds },
+      type: sequelize.QueryTypes.SELECT
+    });
+
+    const companyIdsWithEvaluations = new Set(
+      companiesWithEvaluations.map(item => item.companyid || item.companyId)
+    );
+
+    console.log(`✅ Found ${companyIdsWithEvaluations.size} companies with evaluations`);
+
+    // Filter users whose companies don't have any evaluations
+    const usersWithoutEvaluations = allUsers.filter(user => 
+      !companyIdsWithEvaluations.has(user.companyId)
+    );
+
+    console.log(`🎯 Found ${usersWithoutEvaluations.length} users without evaluations`);
+
+    // Format the response with additional information
+    const formattedUsers = usersWithoutEvaluations.map(user => {
+      const daysSinceRegistration = Math.floor(
+        (new Date() - new Date(user.createdAt)) / (1000 * 60 * 60 * 24)
+      );
+      
+      return {
+        id: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        registeredAt: user.createdAt,
+        lastLoginAt: user.lastLoginAt,
+        company: {
+          id: user.Company.id,
+          name: user.Company.name,
+          testMode: user.Company.testMode
+        },
+        daysSinceRegistration,
+        evaluationStatus: 'no_evaluations'
+      };
+    });
+
+    // Calculate additional metrics
+    const usersWithEvaluations = allUsers.length - usersWithoutEvaluations.length;
+    const evaluationAdoptionRate = ((usersWithEvaluations / allUsers.length) * 100).toFixed(2);
+
+    // Send evaluation setup emails to all users without evaluations
+    let emailResults = {
+      sent: 0,
+      failed: 0,
+      errors: []
+    };
+
+    if (usersWithoutEvaluations.length > 0) {
+      try {
+        console.log(`📧 Sending evaluation setup emails to ${usersWithoutEvaluations.length} users without evaluations`);
+        
+        // Send bulk evaluation setup emails
+        emailResults = await sendBulkEvaluationStepEmails({
+          usersWithoutEvaluations: formattedUsers,
+          Email,
+          User,
+          notificationSource: 'users_without_evaluations_notification'
+        });
+
+        console.log(`✅ Email campaign completed: ${emailResults.sent} sent, ${emailResults.failed} failed`);
+      } catch (emailError) {
+        console.error('❌ Error sending evaluation setup emails:', emailError);
+        emailResults.failed = usersWithoutEvaluations.length;
+        emailResults.errors.push({
+          message: 'Failed to send bulk emails',
+          error: emailError.message
+        });
+      }
+    }
+
+    // Build dynamic message based on date filtering
+    const message = nDays 
+      ? `Found ${usersWithoutEvaluations.length} users without evaluations registered in the last ${nDays} days`
+      : `Found ${usersWithoutEvaluations.length} users without any evaluations configured`;
+    
+    const description = nDays
+      ? `These users registered in the last ${nDays} days and have no models with evaluations in the ModelEvaluationPrompts table`
+      : 'These users have no models with evaluations in the ModelEvaluationPrompts table';
+
+    return res.status(200).json({
+      message,
+      description,
+      usersWithoutEvaluations: formattedUsers,
+      totalCount: usersWithoutEvaluations.length,
+      ...(dateRangeInfo && { dateRange: dateRangeInfo }),
+      metrics: {
+        totalUsers: allUsers.length,
+        usersWithoutEvaluations: usersWithoutEvaluations.length,
+        usersWithEvaluations: usersWithEvaluations,
+        evaluationAdoptionRate: evaluationAdoptionRate + '%',
+        companiesWithEvaluations: companyIdsWithEvaluations.size,
+        totalCompanies: companyIds.length
+      },
+      emailCampaign: {
+        sent: emailResults.sent,
+        failed: emailResults.failed,
+        errors: emailResults.errors,
+        campaignExecuted: true,
+        timestamp: new Date().toISOString()
+      },
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    console.error('❌ Error in getUsersWithoutEvaluations:', error);
     return res.status(500).json({ 
       error: 'Internal server error',
       message: error.message 

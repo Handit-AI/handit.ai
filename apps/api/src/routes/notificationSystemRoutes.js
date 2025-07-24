@@ -3,7 +3,8 @@ import {
   getInactiveUsers, 
   getInactiveUsersRange,
   debugUsers,
-  getInactiveUsersTest
+  getInactiveUsersTest,
+  getUsersWithoutEvaluations
 } from '../controllers/notificationSystemController.js';
 
 const router = express.Router();
@@ -19,5 +20,8 @@ router.get('/inactive-users/:nDays', getInactiveUsers);
 
 // Get inactive users registered within a date range
 router.get('/inactive-users', getInactiveUsersRange);
+
+// Get users who don't have any evaluations configured
+router.get('/users-without-evaluations/:nDays?', getUsersWithoutEvaluations);
 
 export default router; 

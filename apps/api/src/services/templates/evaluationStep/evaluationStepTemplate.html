@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>🎯 Your AI is Running Blind - Add Quality Evaluation</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Poppins', sans-serif;
+      }
+
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 60px 30px;
+        background: #ffffff url('bg-real.png') no-repeat top center;
+        background-size: cover;
+        border-radius: 16px;
+        box-sizing: border-box;
+      }
+
+      .progress-bar {
+        background: #e9ecef;
+        height: 8px;
+        border-radius: 4px;
+        margin-bottom: 30px;
+        overflow: hidden;
+      }
+
+      .progress-fill {
+        background: #02f7aa;
+        height: 100%;
+        width: 33%;
+        border-radius: 4px;
+        position: relative;
+      }
+
+      .progress-fill::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        animation: shimmer 2s infinite;
+      }
+
+      @keyframes shimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+      }
+
+      .step-indicator {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 25px;
+        font-size: 12px;
+        color: #00272f;
+      }
+
+      .step-complete {
+        color: #02f7aa;
+        font-weight: 600;
+      }
+
+      .step-current {
+        color: #00272f;
+        font-weight: 600;
+      }
+
+      .logo {
+        display: block;
+        margin-left: auto;
+        margin-bottom: 40px;
+        width: 180px;
+        height: auto;
+      }
+
+      .achievement-badge {
+        background: #02f7aa;
+        color: #00272f;
+        padding: 12px 24px;
+        border-radius: 25px;
+        display: inline-block;
+        font-weight: 600;
+        font-size: 14px;
+        margin-bottom: 20px;
+      }
+
+      h1 {
+        font-size: 22px;
+        font-weight: 600;
+        color: #00272f;
+        margin-bottom: 24px;
+      }
+
+      .highlight {
+        color: #02f7aa;
+        font-weight: 700;
+      }
+
+      p {
+        font-size: 15px;
+        color: #00272f;
+        margin: 12px 0;
+        line-height: 1.6;
+      }
+
+      .current-status {
+        background: rgba(2, 247, 170, 0.05);
+        border-left: 3px solid #02f7aa;
+        padding: 20px;
+        border-radius: 4px;
+        margin: 25px 0;
+      }
+
+      .status-title {
+        font-weight: 600;
+        color: #02f7aa;
+        margin-bottom: 10px;
+        font-size: 16px;
+      }
+
+      .missing-benefits {
+        background: rgba(2, 247, 170, 0.02);
+        border-left: 3px solid #02f7aa;
+        padding: 20px;
+        margin: 25px 0;
+        border-radius: 4px;
+      }
+
+      .missing-title {
+        font-weight: 600;
+        color: #00272f;
+        margin-bottom: 15px;
+        font-size: 16px;
+      }
+
+      .benefits-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+        margin-top: 15px;
+      }
+
+      .benefit-item {
+        display: flex;
+        align-items: flex-start;
+        font-size: 14px;
+        color: #00272f;
+      }
+
+      .benefit-icon {
+        margin-right: 8px;
+        font-size: 16px;
+        margin-top: 2px;
+        color: #02f7aa;
+      }
+
+      .quick-setup {
+        background: rgba(2, 247, 170, 0.05);
+        border-left: 3px solid #02f7aa;
+        padding: 25px;
+        border-radius: 4px;
+        margin: 30px 0;
+        text-align: center;
+      }
+
+      .setup-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 15px;
+        color: #00272f;
+      }
+
+      .setup-steps {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        margin: 20px 0;
+        text-align: center;
+      }
+
+      .setup-step {
+        padding: 15px;
+        background: rgba(2, 247, 170, 0.1);
+        border-radius: 8px;
+      }
+
+      .step-number {
+        background: #02f7aa;
+        color: #00272f;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 10px;
+        font-weight: 700;
+      }
+
+      .step-text {
+        font-size: 13px;
+        line-height: 1.4;
+        color: #00272f;
+      }
+
+      .button {
+        display: inline-block;
+        margin-top: 30px;
+        padding: 12px 24px;
+        background-color: #02f7aa;
+        color: #00272f !important;
+        text-decoration: none;
+        font-weight: 600;
+        border-radius: 8px;
+      }
+
+      .cta-secondary {
+        display: inline-block;
+        margin: 15px 10px;
+        padding: 12px 24px;
+        background: transparent;
+        color: #02f7aa !important;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 14px;
+        border: 2px solid #02f7aa;
+        border-radius: 8px;
+        text-align: center;
+      }
+
+      .footer {
+        text-align: center;
+        font-size: 13px;
+        color: #00272f;
+        margin-top: 40px;
+      }
+
+      .footer a {
+        color: #00272f;
+        text-decoration: none;
+      }
+
+      @media screen and (max-width: 600px) {
+        .container {
+          padding: 30px 20px;
+        }
+        .logo {
+          width: 140px;
+        }
+        h1 {
+          font-size: 22px;
+        }
+        .benefits-grid {
+          grid-template-columns: 1fr;
+        }
+        .setup-steps {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <img class="logo" src="logo.png" alt="Handit.ai Logo" />
+      
+      <div class="progress-bar">
+        <div class="progress-fill"></div>
+      </div>
+      
+      <div class="step-indicator">
+        <span class="step-complete">✓ Step 1: Observability</span>
+        <span class="step-current">→ Step 2: Evaluation</span>
+        <span>Step 3: Self-Improving</span>
+      </div>
+
+      <div class="achievement-badge">
+        🎉 Great job! Your AI tracing is active
+      </div>
+      
+      <h1>You're <span class="highlight">33% there</span>, Sarah!</h1>
+
+      <p>Hi Sarah,</p>
+
+      <p>
+        Awesome news! Your AI observability is working perfectly. We can see your customer_support_agent 
+        has been traced 247 times over the last 12 days.
+      </p>
+
+      <div class="current-status">
+        <div class="status-title">✅ What's Working</div>
+        <p style="margin: 10px 0; color: #4a5568;">
+          You can see every AI operation, timing, inputs, and outputs in your dashboard. 
+          But you're missing the <strong>quality insights</strong> that come with automated evaluation.
+        </p>
+      </div>
+
+      <div class="missing-benefits">
+        <div class="missing-title">⚠️ What You're Missing Without Evaluation</div>
+        <div class="benefits-grid">
+          <div class="benefit-item">
+            <span class="benefit-icon">📊</span>
+            <span>Quality scores for every response</span>
+          </div>
+          <div class="benefit-item">
+            <span class="benefit-icon">🎯</span>
+            <span>Accuracy & completeness tracking</span>
+          </div>
+          <div class="benefit-item">
+            <span class="benefit-icon">📈</span>
+            <span>Performance trends over time</span>
+          </div>
+          <div class="benefit-item">
+            <span class="benefit-icon">🚨</span>
+            <span>Automatic quality alerts</span>
+          </div>
+          <div class="benefit-item">
+            <span class="benefit-icon">🔍</span>
+            <span>Hidden issue detection</span>
+          </div>
+          <div class="benefit-item">
+            <span class="benefit-icon">🎨</span>
+            <span>Preparation for self-improvement</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="quick-setup">
+        <div class="setup-title">🚀 Add Evaluation in 10 Minutes</div>
+        <p style="margin: 15px 0; opacity: 0.9;">
+          Since your observability is already working, adding evaluation is super quick!
+        </p>
+        
+        <div class="setup-steps">
+          <div class="setup-step">
+            <div class="step-number">1</div>
+            <div class="step-text">Connect evaluation models in Settings</div>
+          </div>
+          <div class="setup-step">
+            <div class="step-number">2</div>
+            <div class="step-text">Create 2-3 focused evaluators</div>
+          </div>
+          <div class="setup-step">
+            <div class="step-number">3</div>
+            <div class="step-text">Associate them to your customer_support_agent</div>
+          </div>
+        </div>
+      </div>
+
+              <a href="https://calendly.com/cristhian-handit/30min" class="button">
+          Get Help Adding Evaluation (Free)
+        </a>
+        <a href="https://docs.handit.ai/quickstart#phase-2-quality-evaluation-10-minutes" class="cta-secondary">
+          Follow Step 2 Guide
+        </a>
+
+      <p style="font-size: 14px; color: #00272f; margin-top: 25px;">
+        <strong>Pro tip:</strong> Once evaluation is running, you'll automatically unlock 
+        self-improving AI (Step 3) that generates better prompts based on your quality data.
+      </p>
+
+      <div class="footer">
+        Questions about evaluation setup? <a href="mailto:contact@handit.ai">contact@handit.ai</a><br>
+        &copy; 2025 Handit.ai — From observable to optimizable AI
+      </div>
+    </div>
+  </body>
+</html> 

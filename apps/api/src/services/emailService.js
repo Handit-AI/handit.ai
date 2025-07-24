@@ -673,7 +673,7 @@ export const sendReEngagementEmail = async ({
   recipientEmail,
   firstName,
   daysSinceRegistration,
-  quickstartUrl = 'https://docs.handit.ai/quickstart',
+  quickstartUrl = 'https://docs.handit.ai/quickstart#phase-1-ai-observability-5-minutes',
   Email,
   User,
   notificationSource = 're_engagement',
@@ -699,14 +699,14 @@ export const sendReEngagementEmail = async ({
         filename: 'logo.png',
         type: 'image/png',
         disposition: 'inline',
-        content_id: 'logo'
+        content_id: 'logo-image'
       },
       {
         content: fs.readFileSync(path.join(__dirname, 'src/services/templates/bg-real.png')).toString('base64'),
-        filename: 'bg-real.png',
+        filename: 'bg-handit.png',
         type: 'image/png',
         disposition: 'inline',
-        content_id: 'bg-real'
+        content_id: 'bg-image'
       }
     ],
     Email,
@@ -728,7 +728,7 @@ export const sendReEngagementEmail = async ({
  */
 export const sendBulkReEngagementEmails = async ({
   inactiveUsers,
-  quickstartUrl = 'https://docs.handit.ai/quickstart',
+  quickstartUrl = 'https://docs.handit.ai/quickstart#phase-1-ai-observability-5-minutes',
   Email,
   User,
   notificationSource = 're_engagement_bulk'
@@ -771,5 +771,130 @@ export const sendBulkReEngagementEmails = async ({
   }
 
   console.log(`🎯 Bulk re-engagement campaign completed: ${results.sent} sent, ${results.failed} failed`);
+  return results;
+};
+
+/**
+ * Sends an evaluation setup email to a user who has observability but is missing evaluations.
+ * @param {Object} options - Email options.
+ * @param {string} options.recipientEmail - Email address of the recipient.
+ * @param {string} options.firstName - First name of the recipient.
+ * @param {string} options.agentName - Name of the user's agent.
+ * @param {number} options.totalTraces - Total number of traces for the agent.
+ * @param {number} options.daysActive - Number of days the agent has been active.
+ * @param {Object} options.Email - Email model for database operations.
+ * @param {Object} options.User - User model for database operations.
+ * @param {string} [options.notificationSource] - Source of the notification.
+ * @param {number} [options.sourceId] - ID of the source.
+ * @returns {Promise<void>}
+ */
+export const sendEvaluationStepEmail = async ({
+  recipientEmail,
+  firstName,
+  agentName,
+  totalTraces,
+  daysActive,
+  Email,
+  User,
+  notificationSource = 'evaluation_step',
+  sourceId = null
+}) => {
+  const subject = '🎯 You\'re 33% there - Add Quality Evaluation to Your AI';
+  
+  const templateData = {
+    user_name: firstName,
+    agent_name: agentName,
+    total_traces: totalTraces,
+    days_active: daysActive,
+    year: new Date().getFullYear()
+  };
+
+  await sendTemplatedEmail({
+    to: recipientEmail,
+    subject,
+    templateName: 'evaluationStep/evaluationStepTemplate',
+    templateData,
+    attachments: [
+      {
+        content: fs.readFileSync(path.join(__dirname, 'src/services/templates/evaluationStep/logo.png')).toString('base64'),
+        filename: 'logo.png',
+        type: 'image/png',
+        disposition: 'inline',
+        content_id: 'logo-image'
+      },
+      {
+        content: fs.readFileSync(path.join(__dirname, 'src/services/templates/evaluationStep/bg-real.png')).toString('base64'),
+        filename: 'bg-handit.png',
+        type: 'image/png',
+        disposition: 'inline',
+        content_id: 'bg-image'
+      }
+    ],
+    Email,
+    User,
+    notificationSource,
+    sourceId
+  });
+};
+
+/**
+ * Sends bulk evaluation setup emails to multiple users without evaluations.
+ * @param {Object} options - Bulk email options.
+ * @param {Array} options.usersWithoutEvaluations - Array of user objects without evaluations.
+ * @param {Object} options.Email - Email model for database operations.
+ * @param {Object} options.User - User model for database operations.
+ * @param {string} [options.notificationSource] - Source of the notification.
+ * @returns {Promise<void>}
+ */
+export const sendBulkEvaluationStepEmails = async ({
+  usersWithoutEvaluations,
+  Email,
+  User,
+  notificationSource = 'evaluation_step_bulk'
+}) => {
+  console.log(`📧 Starting bulk evaluation setup email campaign for ${usersWithoutEvaluations.length} users`);
+  
+  const results = {
+    sent: 0,
+    failed: 0,
+    errors: []
+  };
+
+  for (const user of usersWithoutEvaluations) {
+    try {
+      // Generate some sample data for users without actual trace data
+      const agentName = user.agentName || user.company?.name + '_agent' || 'AI_agent';
+      const totalTraces = Math.floor(Math.random() * 300) + 50; // Random between 50-350
+      const daysActive = user.daysSinceRegistration || Math.floor(Math.random() * 30) + 1; // Random or actual days
+
+      await sendEvaluationStepEmail({
+        recipientEmail: user.email,
+        firstName: user.firstName,
+        agentName: agentName,
+        totalTraces: totalTraces,
+        daysActive: daysActive,
+        Email,
+        User,
+        notificationSource,
+        sourceId: user.id
+      });
+      
+      results.sent++;
+      console.log(`✅ Evaluation setup email sent to ${user.email}`);
+      
+      // Small delay between emails to avoid rate limiting
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+    } catch (error) {
+      results.failed++;
+      results.errors.push({
+        email: user.email,
+        error: error.message
+      });
+      console.error(`❌ Failed to send evaluation setup email to ${user.email}:`, error.message);
+    }
+  }
+
+  console.log(`🎯 Bulk evaluation setup campaign completed: ${results.sent} sent, ${results.failed} failed`);
   return results;
 };
