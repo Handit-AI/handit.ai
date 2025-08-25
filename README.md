@@ -628,9 +628,9 @@ Discover some real-world examples of Handit.ai:
 
 ## 🎯 Examples
 
-### 🏆 **[Unstructured to Structured](https://github.com/Handit-AI/handit-examples/tree/main/examples/unstructured-to-structured)** - Full-Featured Production App
+### 🏆 **[Unstructured to Structured](https://github.com/Handit-AI/handit-examples/tree/main/examples/unstructured-to-structured)**
 
-Self-improving AI agent that automatically converts messy, unstructured documents into clean, structured data and CSV tables. Perfect for processing invoices, purchase orders, contracts, medical reports, and any other document types.
+Self-improving AI agent that automatically converts messy, unstructured documents into clean, structured data and CSV tables. Perfect for processing invoices, purchase orders, contracts, medical reports, and any other document types. But here's the kicker - **it actually gets better at its job over time**.
 
 **[Source Code →](https://github.com/Handit-AI/handit-examples/tree/main/examples/unstructured-to-structured)**
 
